@@ -144,6 +144,7 @@ static void tricore_cpu_class_init(ObjectClass *c, void *data)
     cc->reset = tricore_cpu_reset;
     cc->class_by_name = tricore_cpu_class_by_name;
     cc->has_work = tricore_cpu_has_work;
+    cc->do_interrupt = tricore_cpu_do_interrupt;
 
     cc->dump_state = tricore_cpu_dump_state;
     cc->set_pc = tricore_cpu_set_pc;

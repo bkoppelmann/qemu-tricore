@@ -511,6 +511,18 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
     }
 }
 
+static inline void
+generate_trap (DisasContext *ctx, int class, int tin)
+{
+    printf("Trap Class:%d Tin:%d generated\n", class, tin);
+    gen_save_pc(ctx->pc);
+    TCGv_i32 classtemp = tcg_const_i32(class);
+    TCGv_i32 tintemp   = tcg_const_i32(tin);
+    gen_helper_exception(cpu_env,classtemp,tintemp);
+    tcg_temp_free_i32(classtemp);
+    tcg_temp_free_i32(tintemp);
+}
+
 static inline void gen_branch_cond(DisasContext *ctx, TCGCond cond, TCGv r1,
                                    TCGv r2, int16_t address)
 {
@@ -980,6 +992,7 @@ static void decode_sr_system(CPUTriCoreState *env, DisasContext *ctx)
         break;
     case OPC2_16_SR_DEBUG:
         /* raise EXCP_DEBUG */
+        generate_trap(ctx,TRAPC_SYSCALL,0);
         break;
     }
 }

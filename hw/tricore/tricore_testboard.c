@@ -89,7 +89,7 @@ static void tricore_testboard_init(MachineState *machine, int board_id)
     memory_region_init_ram(pcp_text, NULL, "powerlink_pcp_text.ram", 32*1024, &error_abort);
     vmstate_register_ram_global(pcp_text);
 
-    memory_region_add_subregion(sysmem, 0x80000000, ext_cram);
+    memory_region_add_subregion(sysmem, 0xa0000000, ext_cram);
     memory_region_add_subregion(sysmem, 0xa1000000, ext_dram);
     memory_region_add_subregion(sysmem, 0xd4000000, int_cram);
     memory_region_add_subregion(sysmem, 0xd0000000, int_dram);

@@ -138,3 +138,8 @@ void psw_write(CPUTriCoreState *env, uint32_t val)
     env->PSW_USB_SAV = ((val & MASK_USB_SAV) << 4);
     env->PSW = val;
 }
+
+void tricore_cpu_do_interrupt(CPUState *cs)
+{
+    exit(1);
+}
