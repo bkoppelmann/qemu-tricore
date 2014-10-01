@@ -76,7 +76,7 @@ static void tricore_testboard_init(MachineState *machine, int board_id)
         error_report("Unable to find CPU definition");
         exit(1);
     }
-    memory_region_init_ram(ext_cram, NULL, "powerlink_ext_c.ram", 2*1024*1024, &error_abort);
+    memory_region_init_ram(ext_cram, NULL, "powerlink_ext_c.ram", 15*1024*1024, &error_abort);
     vmstate_register_ram_global(ext_cram);
     memory_region_init_ram(ext_dram, NULL, "powerlink_ext_d.ram", 4*1024*1024, &error_abort);
     vmstate_register_ram_global(ext_dram);

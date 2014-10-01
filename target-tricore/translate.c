@@ -993,6 +993,7 @@ static void decode_sr_system(CPUTriCoreState *env, DisasContext *ctx)
     case OPC2_16_SR_DEBUG:
         /* raise EXCP_DEBUG */
         generate_trap(ctx,TRAPC_SYSCALL,0);
+        ctx->bstate = BS_BRANCH;
         break;
     }
 }
