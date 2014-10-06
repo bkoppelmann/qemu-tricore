@@ -657,6 +657,13 @@ static void gen_compute_branch(DisasContext *ctx, uint32_t opc, int r1,
         tcg_gen_movi_tl(cpu_gpr_a[11], ctx->next_pc);
         gen_goto_tb(ctx, 0, ctx->pc + offset * 2);
         break;
+    case OPCM_32_BRR_LOOP:
+        if(MASK_OP_BRR_OP2(ctx->opcode) == OPC2_32_BRR_LOOP) {
+            gen_loop(ctx, r1, offset*2);
+        } else {
+            gen_goto_tb(ctx, 0, ctx->pc + offset*2);
+        }
+        break;
     default:
         printf("Branch Error at %x\n", ctx->pc);
     }
@@ -2282,10 +2289,21 @@ static void decode_bo_addrmode_ldmst_bitreverse_circular(CPUTriCoreState *env,
     tcg_temp_free(temp3);
 }
 
+static void decode_brr_loop(CPUTriCoreState *env, DisasContext *ctx)
+{
+    uint32_t disp15;
+    int r1;
+
+    disp15 = MASK_OP_BRR_DISP15_SEXT(ctx->opcode);
+    r1 = MASK_OP_BRR_S2(ctx->opcode);
+
+    gen_compute_branch(ctx, OPCM_32_BRR_LOOP, r1, 0, 0, disp15);
+}
+
 static void decode_32Bit_opc(CPUTriCoreState *env, DisasContext *ctx)
 {
     int op1;
-    int32_t r1;
+    int32_t r1, r2;
     int32_t address;
     int8_t b;
     int32_t bpos;
@@ -2407,6 +2425,20 @@ static void decode_32Bit_opc(CPUTriCoreState *env, DisasContext *ctx)
         break;
     case OPCM_32_BO_ADDRMODE_LDMST_BITREVERSE_CIRCULAR:
         decode_bo_addrmode_ldmst_bitreverse_circular(env, ctx);
+        break;
+    case OPCM_32_BRR_LOOP:
+        decode_brr_loop(env,ctx);
+        break;
+    case OPC1_32_RLC_MOVH_A:
+        address = MASK_OP_RLC_CONST16(ctx->opcode)<<16;
+        r1 = MASK_OP_RLC_D(ctx->opcode);
+        tcg_gen_movi_tl(cpu_gpr_a[r1],address & 0xffff0000);
+        break;
+    case OPC1_32_BOL_LEA_LONGOFF:
+        address = MASK_OP_BOL_OFF16_SEXT(ctx->opcode);
+        r2 = MASK_OP_BOL_S2(ctx->opcode);
+        r1 = MASK_OP_BOL_S1D(ctx->opcode);
+        tcg_gen_addi_tl(cpu_gpr_a[r1],cpu_gpr_a[r2],address);
         break;
     }
 }

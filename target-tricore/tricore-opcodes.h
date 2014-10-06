@@ -114,7 +114,10 @@
 /* BOL Format */
 #define MASK_OP_BOL_OFF16(op)  ((MASK_BITS_SHIFT(op, 16, 21) +        \
                                (MASK_BITS_SHIFT(op, 28, 31) << 6)) + \
-                               (MASK_BITS_SHIFT(op, 22, 27) >> 10))
+                               (MASK_BITS_SHIFT(op, 22, 27) << 10))
+#define MASK_OP_BOL_OFF16_SEXT(op)  ((MASK_BITS_SHIFT(op, 16, 21) +        \
+                               (MASK_BITS_SHIFT(op, 28, 31) << 6)) + \
+                               (MASK_BITS_SHIFT(op, 22, 27) << 10))
 
 #define MASK_OP_BOL_S2(op)     MASK_BITS_SHIFT(op, 12, 15)
 #define MASK_OP_BOL_S1D(op)    MASK_BITS_SHIFT(op, 8, 11)
@@ -134,6 +137,7 @@
 /* BRR Format */
 #define MASK_OP_BRR_OP2(op)    MASK_BITS_SHIFT(op, 31, 31)
 #define MASK_OP_BRR_DISP15(op) MASK_BITS_SHIFT(op, 16, 30)
+#define MASK_OP_BRR_DISP15_SEXT(op) MASK_BITS_SHIFT_SEXT(op, 16, 30)
 #define MASK_OP_BRR_S2(op)     MASK_BITS_SHIFT(op, 12, 15)
 #define MASK_OP_BRR_S1(op)     MASK_BITS_SHIFT(op, 8, 11)
 
