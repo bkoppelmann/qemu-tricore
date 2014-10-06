@@ -20,6 +20,26 @@
 #include "exec/helper-proto.h"
 #include "exec/cpu_ldst.h"
 
+static int instr_count = 1;
+
+void helper_print_reg(CPUTriCoreState *env, target_ulong pc)
+{
+    FILE *fd;
+    int i;
+    fd = fopen("/tmp/regdump","a");
+    fprintf(fd,"%d(%08x:)",instr_count,pc);
+    for(i=0 ; i<16 ; i++) {
+       fprintf(fd,"d%d[%08x],",i,env->gpr_d[i]);
+    }
+    for(i=0 ; i<16 ; i++) {
+        fprintf(fd,"a%d[%08x],",i,env->gpr_a[i]);
+    }
+    fprintf(fd,"PSW[%08x],",psw_read(env));
+    fprintf(fd,"\n");
+    fclose(fd);
+    instr_count++;
+}
+
 void helper_raise_exception_err(CPUTriCoreState *env, uint32_t class,
                                 uint32_t tin, int error_code)
 {
