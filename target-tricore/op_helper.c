@@ -20,6 +20,87 @@
 #include "exec/helper-proto.h"
 #include "exec/cpu_ldst.h"
 
+static int instr_count = 1;
+
+void helper_print_reg(CPUTriCoreState *env, target_ulong pc)
+{
+    FILE *fd;
+    int i;
+    fd = fopen("/tmp/regdump","a");
+    fprintf(fd,"%d(%08x:)",instr_count,pc);
+    for(i=0 ; i<16 ; i++) {
+       fprintf(fd,"d%d[%08x],",i,env->gpr_d[i]);
+    }
+    for(i=0 ; i<16 ; i++) {
+        fprintf(fd,"a%d[%08x],",i,env->gpr_a[i]);
+    }
+    fprintf(fd,"PSW[%08x],",psw_read(env));
+    fprintf(fd,"\n");
+    fclose(fd);
+    instr_count++;
+}
+
+void helper_raise_exception_err(CPUTriCoreState *env, uint32_t class,
+                                uint32_t tin, int error_code)
+{
+    CPUState *cs = CPU(tricore_env_get_cpu(env));
+    uint32_t pc = env->PC;
+    /*The upper context is saved.*/
+    printf("trap class:%d, tin:%d executed @%x",class,tin, pc);
+
+    /* The return address in A[11] is updated. */
+    // TODO: Handle synchronous/asynchronous different ret_adress
+    env->gpr_a[11] = pc+4;
+
+    /* The TIN is loaded into D[15]. */
+    env->gpr_d[15] = tin;
+    /* The stack pointer in A[10] is set to the Interrupt Stack Pointer (ISP)
+       when the processor was not previously using the interrupt stack
+       (in case of PSW.IS = 0). The stack pointer bit is set for using the
+       interrupt stack: PSW.IS = 1. */
+    if ((env->PSW & MASK_PSW_IS) == 0) {
+        env->gpr_a[10] = env->ISP;
+    }
+    env->PSW |= MASK_PSW_IS;
+    /* The I/O mode is set to Supervisor mode, which means all permissions
+       are enabled: PSW.IO = 10 B .*/
+    env->PSW |= MASK_PSW_IO;
+
+    /*The current Protection Register Set is set to 0: PSW.PRS = 00 B .*/
+    env->PSW &= ~(MASK_PSW_PRS);
+
+    /* The Call Depth Counter (CDC) is cleared, and the call depth limit is
+       set for 64: PSW.CDC = 0000000 B .*/
+    env->PSW &= ~(MASK_PSW_CDC);
+
+    /* Call Depth Counter is enabled, PSW.CDE = 1. */
+    env->PSW |= MASK_PSW_CDE;
+
+    /* Write permission to global registers A[0], A[1], A[8], A[9] is
+       disabled: PSW.GW = 0. */
+    env->PSW &= ~MASK_PSW_GW;
+
+    /*The interrupt system is globally disabled: ICR.IE = 0. The ‘old’
+      ICR.IE and ICR.CCPN are saved */
+
+    /* PCXI.PIE = ICR.IE */
+    env->PCXI = ((env->PCXI & ~MASK_PCXI_PIE) +
+                           ((env->ICR & MASK_ICR_IE) << 15));
+    /* PCXI.PCPN = ICR.CCPN */
+    env->PCXI = (env->PCXI & 0xffffff) +
+                          ((env->ICR & MASK_ICR_CCPN) << 24);
+    /* The trap vector table is accessed to fetch the first instruction of
+       the trap handler. */
+    cs->exception_index = class;
+    env->error_code = error_code;
+    cpu_loop_exit(cs);
+}
+
+void helper_exception(CPUTriCoreState *env, uint32_t class, uint32_t tin)
+{
+    helper_raise_exception_err(env, class, tin, 0);
+}
+
 /* Addressing mode helper */
 
 static uint16_t reverse16(uint16_t val)

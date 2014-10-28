@@ -14,7 +14,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
-
+/* Exceptions */
+DEF_HELPER_4(raise_exception_err, noreturn, env, i32, i32, int)
+DEF_HELPER_3(exception, noreturn, env, i32, i32)
+DEF_HELPER_2(print_reg, void, env, i32)
 /* Arithmetic */
 DEF_HELPER_3(add_ssov, i32, env, i32, i32)
 DEF_HELPER_3(add_suov, i32, env, i32, i32)

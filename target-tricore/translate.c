@@ -119,6 +119,11 @@ void tricore_cpu_dump_state(CPUState *cs, FILE *f,
 #define EA_B_ABSOLUT(con) (((offset & 0xf00000) << 8) | \
                            ((offset & 0x0fffff) << 1))
 
+static void gen_print_reg(int pc)
+{
+    gen_helper_1arg(print_reg, pc);
+}
+
 /* Functions for load/save to/from memory */
 
 static inline void gen_offset_ld(DisasContext *ctx, TCGv r1, TCGv r2,
@@ -883,6 +888,7 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
     tb = ctx->tb;
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK) &&
         likely(!ctx->singlestep_enabled)) {
+        gen_print_reg(ctx->pc);
         tcg_gen_goto_tb(n);
         gen_save_pc(dest);
         tcg_gen_exit_tb((uintptr_t)tb + n);
@@ -891,8 +897,21 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
         if (ctx->singlestep_enabled) {
             /* raise exception debug */
         }
+        gen_print_reg(ctx->pc);
         tcg_gen_exit_tb(0);
     }
+}
+
+static inline void
+generate_trap (DisasContext *ctx, int class, int tin)
+{
+    printf("Trap Class:%d Tin:%d generated\n", class, tin);
+    gen_save_pc(ctx->pc);
+    TCGv_i32 classtemp = tcg_const_i32(class);
+    TCGv_i32 tintemp   = tcg_const_i32(tin);
+    gen_helper_exception(cpu_env,classtemp,tintemp);
+    tcg_temp_free_i32(classtemp);
+    tcg_temp_free_i32(tintemp);
 }
 
 static inline void gen_branch_cond(DisasContext *ctx, TCGCond cond, TCGv r1,
@@ -1010,10 +1029,12 @@ static void gen_compute_branch(DisasContext *ctx, uint32_t opc, int r1,
 /* SR-format jumps */
     case OPC1_16_SR_JI:
         tcg_gen_andi_tl(cpu_PC, cpu_gpr_a[r1], 0xfffffffe);
+        gen_print_reg(ctx->pc);
         tcg_gen_exit_tb(0);
         break;
     case OPC2_16_SR_RET:
         gen_helper_ret(cpu_env);
+        gen_print_reg(ctx->pc);
         tcg_gen_exit_tb(0);
         break;
 /* B-format */
@@ -1491,11 +1512,14 @@ static void decode_sr_system(CPUTriCoreState *env, DisasContext *ctx)
         break;
     case OPC2_16_SR_RFE:
         gen_helper_rfe(cpu_env);
+        gen_print_reg(ctx->pc);
         tcg_gen_exit_tb(0);
         ctx->bstate = BS_BRANCH;
         break;
     case OPC2_16_SR_DEBUG:
         /* raise EXCP_DEBUG */
+        gen_print_reg(ctx->pc);
+        generate_trap(ctx,TRAPC_SYSCALL,0);
         break;
     }
 }
@@ -3355,7 +3379,7 @@ gen_intermediate_code_internal(TriCoreCPU *cpu, struct TranslationBlock *tb,
         decode_opc(env, &ctx, 0);
 
         num_insns++;
-
+        gen_print_reg(ctx.pc);
         if (tcg_ctx.gen_opc_ptr >= gen_opc_end) {
             gen_save_pc(ctx.next_pc);
             tcg_gen_exit_tb(0);
@@ -3435,6 +3459,7 @@ void tricore_tcg_init(void)
 {
     int i;
     static int inited;
+    remove("/tmp/regdump");
     if (inited) {
         return;
     }
