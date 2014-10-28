@@ -690,6 +690,7 @@ static void gen_sha_hi(TCGv ret, TCGv r1, int32_t shift_count)
         high = tcg_temp_new();        
 
         tcg_gen_ext16s_tl(low, r1);
+        tcg_gen_andi_tl(high, r1, 0xffff0000);
         tcg_gen_sari_tl(low, low, -shift_count);
         tcg_gen_sari_tl(ret, high, -shift_count);
         tcg_gen_deposit_tl(ret, ret, low, 0, 16);
@@ -2879,7 +2880,7 @@ static void decode_rc_logical_shift(CPUTriCoreState *env, DisasContext *ctx)
         break;
     case OPC2_32_RC_SH_H:
         const9 = sextract32(const9, 0, 5);
-        gen_sh_hi(cpu_gpr_d[r2], cpu_gpr_a[r1], const9);
+        gen_sh_hi(cpu_gpr_d[r2], cpu_gpr_d[r1], const9);
         break;
     case OPC2_32_RC_SHA:
         const9 = sextract32(const9, 0, 6);
