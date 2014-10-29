@@ -2834,8 +2834,10 @@ static void decode_bol_opc(CPUTriCoreState *env, DisasContext *ctx, int32_t op1)
         } else {
             /* raise illegal opcode trap */
         }
+        break;
     case OPC1_32_BOL_ST_W_LONGOFF:
         gen_offset_st(ctx, cpu_gpr_d[r1], cpu_gpr_a[r2], address, MO_LEUL);
+        break;
     }
 
 }
