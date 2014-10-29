@@ -488,12 +488,13 @@ static inline void gen_muli_i32s(TCGv ret, TCGv r1, int32_t con)
 static inline void gen_mul_i64s(TCGv ret_low, TCGv ret_high, TCGv r1, TCGv r2)
 {
     tcg_gen_muls2_tl(ret_low, ret_high, r1, r2);
-    /* no V bit */
+    /* clear V bit */
+    tcg_gen_movi_tl(cpu_PSW_V, 0);
     /* calc SV bit */
     tcg_gen_or_tl(cpu_PSW_SV, cpu_PSW_SV, cpu_PSW_V);
     /* Calc AV bit */
-    tcg_gen_add_tl(cpu_PSW_AV, ret_low, ret_low);
-    tcg_gen_xor_tl(cpu_PSW_AV, ret_low, cpu_PSW_AV);
+    tcg_gen_add_tl(cpu_PSW_AV, ret_high, ret_high);
+    tcg_gen_xor_tl(cpu_PSW_AV, ret_high, cpu_PSW_AV);
     /* calc SAV bit */
     tcg_gen_or_tl(cpu_PSW_SAV, cpu_PSW_SAV, cpu_PSW_AV);
 }
@@ -509,12 +510,13 @@ static inline void gen_muli_i64s(TCGv ret_low, TCGv ret_high, TCGv r1,
 static inline void gen_mul_i64u(TCGv ret_low, TCGv ret_high, TCGv r1, TCGv r2)
 {
     tcg_gen_mulu2_tl(ret_low, ret_high, r1, r2);
-    /* no V bit */
+    /* clear V bit */
+    tcg_gen_movi_tl(cpu_PSW_V, 0);
     /* calc SV bit */
     tcg_gen_or_tl(cpu_PSW_SV, cpu_PSW_SV, cpu_PSW_V);
     /* Calc AV bit */
-    tcg_gen_add_tl(cpu_PSW_AV, ret_low, ret_low);
-    tcg_gen_xor_tl(cpu_PSW_AV, ret_low, cpu_PSW_AV);
+    tcg_gen_add_tl(cpu_PSW_AV, ret_high, ret_high);
+    tcg_gen_xor_tl(cpu_PSW_AV, ret_high, cpu_PSW_AV);
     /* calc SAV bit */
     tcg_gen_or_tl(cpu_PSW_SAV, cpu_PSW_SAV, cpu_PSW_AV);
 }
@@ -687,7 +689,7 @@ static void gen_sha_hi(TCGv ret, TCGv r1, int32_t shift_count)
         tcg_temp_free(high);
     } else {
         low = tcg_temp_new();
-        high = tcg_temp_new();        
+        high = tcg_temp_new();
 
         tcg_gen_ext16s_tl(low, r1);
         tcg_gen_andi_tl(high, r1, 0xffff0000);
@@ -3143,9 +3145,11 @@ static void decode_rc_mul(CPUTriCoreState *env, DisasContext *ctx)
         gen_mulsi_i32(cpu_gpr_d[r2], cpu_gpr_d[r1], const9);
         break;
     case OPC2_32_RC_MUL_U_64:
+        const9 = MASK_OP_RC_CONST9(ctx->opcode);
         gen_muli_i64u(cpu_gpr_d[r2], cpu_gpr_d[r2+1], cpu_gpr_d[r1], const9);
         break;
     case OPC2_32_RC_MULS_U_32:
+        const9 = MASK_OP_RC_CONST9(ctx->opcode);
         gen_mulsui_i32(cpu_gpr_d[r2], cpu_gpr_d[r1], const9);
         break;
     }
